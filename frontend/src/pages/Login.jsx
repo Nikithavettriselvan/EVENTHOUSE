@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Ticket, Mail, Lock } from "lucide-react";
 import FormInput from "../components/FormInput";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [serverError, setServerError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,16 +27,20 @@ function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // stop the page from reloading
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    // TODO: call the FastAPI login endpoint here
-    console.log("Login data:", form);
+    try {
+      setServerError("");
+      const user = await login(form.email, form.password);
+      navigate(user.role === "organizer" ? "/organizer" : "/events");
+    } catch (err) {
+      setServerError(err.response?.data?.detail || "Something went wrong. Try again.");
+    }
   };
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-10">
       {/* Logo */}
@@ -75,7 +83,9 @@ function Login() {
             error={errors.password}
             autoComplete="current-password"
           />
-
+          {serverError && (
+            <p className="text-sm font-medium text-red-600">{serverError}</p>
+          )}
           <button
             type="submit"
             className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"

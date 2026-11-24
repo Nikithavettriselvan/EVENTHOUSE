@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Ticket, Mail, Lock, User, Building2, Hash, GraduationCap, Megaphone } from "lucide-react";
 import FormInput from "../components/FormInput";
+import api from "../api/axios";
 
 const departments = [
   "Information Technology",
@@ -15,6 +16,7 @@ const departments = [
 ];
 
 function Signup() {
+  const navigate = useNavigate();
   const [role, setRole] = useState("student"); // "student" or "organizer"
   const [form, setForm] = useState({
     name: "",
@@ -24,6 +26,8 @@ function Signup() {
     registerNo: "",
   });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -45,18 +49,42 @@ function Signup() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    // Organizers don't send a register number
-    const data = { ...form, role };
-    if (role === "organizer") delete data.registerNo;
+    // Field names must match the backend schema (register_number, not registerNo).
+    // Organizers send register_number as null.
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      password: form.password,
+      role,
+      department: form.department,
+      register_number: role === "student" ? form.registerNo.trim() : null,
+    };
 
-    // TODO: call the FastAPI register endpoint here
-    console.log("Signup data:", data);
+    try {
+      setLoading(true);
+      setServerError("");
+      await api.post("/auth/signup", payload);
+      navigate("/login");
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      if (typeof detail === "string") {
+        // e.g. 409 "Email already registered"
+        setServerError(detail);
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        // 422 validation errors: show the first message
+        setServerError(detail[0].msg || "Please check your details.");
+      } else {
+        setServerError("Could not reach the server. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleClasses = (active) =>
@@ -151,11 +179,16 @@ function Signup() {
             />
           )}
 
+          {serverError && (
+            <p className="text-sm font-medium text-red-600">{serverError}</p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"
+            disabled={loading}
+            className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Create account
+            {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
