@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Events from "./pages/Events";
+import OrganizerDashboard from "./pages/OrganizerDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function NotFound() {
   return (
@@ -21,6 +24,15 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+        <Route
+          path="/organizer"
+          element={
+            <ProtectedRoute roles={["organizer"]}>
+              <OrganizerDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

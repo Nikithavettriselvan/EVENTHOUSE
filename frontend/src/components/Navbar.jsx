@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Ticket, Search, Menu, X } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 const links = [
   { label: "Browse Events", href: "#events" },
   { label: "How it Works", href: "#how-it-works" },
@@ -8,8 +9,16 @@ const links = [
 ];
 
 function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const handleLogout = () => {
+    logout();
+    setOpen(false);
+    navigate("/login");
+  };
+  
 
   // Stop the page behind the drawer from scrolling, and close with the Escape key
   useEffect(() => {
@@ -61,15 +70,22 @@ function Navbar() {
 
           {/* Desktop buttons */}
           <div className="hidden items-center gap-3 md:flex">
-            <a href="/login" className="text-sm font-semibold text-slate-700 hover:text-indigo-600">
-              Login
-            </a>
-            <a
-              href="/signup"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
-              Sign Up
-            </a>
+            {user ? (
+              <>
+                <span className="text-sm font-medium text-slate-700">Hi, {user.name.split(" ")[0]}</span>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="/login" className="text-sm font-semibold text-slate-700 hover:text-indigo-600">Login</a>
+                <a href="/signup" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Sign Up</a>
+              </>
+            )}
           </div>
 
           {/* Hamburger button (mobile only) */}
@@ -130,20 +146,19 @@ function Navbar() {
         </div>
 
         <div className="mt-auto flex flex-col gap-3">
-          <a
-            href="/login"
-            onClick={close}
-            className="rounded-lg border border-slate-200 px-4 py-3 text-center font-semibold text-slate-700"
-          >
-            Login
-          </a>
-          <a
-            href="/signup"
-            onClick={close}
-            className="rounded-lg bg-indigo-600 px-4 py-3 text-center font-semibold text-white"
-          >
-            Sign Up
-          </a>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-slate-200 px-4 py-3 text-center font-semibold text-slate-700"
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <a href="/login" onClick={close} className="rounded-lg border border-slate-200 px-4 py-3 text-center font-semibold text-slate-700">Login</a>
+              <a href="/signup" onClick={close} className="rounded-lg bg-indigo-600 px-4 py-3 text-center font-semibold text-white">Sign Up</a>
+            </>
+          )}
         </div>
       </aside>
     </>
